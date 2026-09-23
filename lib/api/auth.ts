@@ -1,4 +1,4 @@
-import { LoginFormValues } from "../validations/auth";
+import type { LoginFormValues } from "@/lib/validations/auth";
 
 export interface User {
   id: string;
@@ -11,20 +11,17 @@ export interface LoginResponse {
 }
 
 export async function login(values: LoginFormValues): Promise<LoginResponse> {
-  const response = await fetch(
-    `${process.env.NEXT_PUBLIC_API_URL}/auth/login`,
-    {
-      method: "POST",
+  const response = await fetch("/api/auth/login", {
+    method: "POST",
 
-      headers: {
-        "Content-Type": "application/json",
-      },
-
-      credentials: "include",
-
-      body: JSON.stringify(values),
+    headers: {
+      "Content-Type": "application/json",
     },
-  );
+
+    credentials: "include",
+
+    body: JSON.stringify(values),
+  });
 
   if (!response.ok) {
     throw new Error("Invalid email or password");

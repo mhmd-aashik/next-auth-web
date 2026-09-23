@@ -40,7 +40,7 @@ export function LoginForm() {
 
       console.log(result);
 
-      // router.push("/dashboard");
+      router.push("/dashboard");
     } catch {
       setServerError("Invalid email or password");
     }
