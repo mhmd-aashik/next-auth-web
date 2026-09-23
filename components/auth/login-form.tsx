@@ -3,8 +3,11 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { login } from "@/lib/api/auth";
 import { loginSchema } from "@/lib/validations/auth";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 
 interface LoginFormValues {
@@ -13,9 +16,11 @@ interface LoginFormValues {
 }
 
 export function LoginForm() {
+  const router = useRouter();
+  const [serverError, setServerError] = useState<string | null>(null);
+
   const {
     register,
-    watch,
     handleSubmit,
     formState: { errors, isSubmitting },
   } = useForm<LoginFormValues>({
@@ -27,8 +32,18 @@ export function LoginForm() {
     },
   });
 
-  async function onSubmit(data: LoginFormValues): Promise<void> {
-    console.log(data);
+  async function onSubmit(data: LoginFormValues) {
+    setServerError(null);
+
+    try {
+      const result = await login(data);
+
+      console.log(result);
+
+      // router.push("/dashboard");
+    } catch {
+      setServerError("Invalid email or password");
+    }
   }
 
   return (
@@ -64,6 +79,11 @@ export function LoginForm() {
         )}
       </div>
 
+      {serverError && (
+        <p role="alert" className="text-destructive text-sm">
+          {serverError}
+        </p>
+      )}
       <Button type="submit" className="w-full" disabled={isSubmitting}>
         {isSubmitting ? "Signing in..." : "Login"}
       </Button>
