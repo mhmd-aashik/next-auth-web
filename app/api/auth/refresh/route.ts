@@ -8,9 +8,9 @@ interface RefreshResponse {
 export async function POST() {
   const cookieStore = await cookies();
 
-  const currentRefreshToken = cookieStore.get("refresh_token")?.value;
+  const refreshToken = cookieStore.get("refresh_token")?.value;
 
-  if (!currentRefreshToken) {
+  if (!refreshToken) {
     return NextResponse.json({ message: "Not authenticated" }, { status: 401 });
   }
 
@@ -18,13 +18,14 @@ export async function POST() {
     method: "POST",
 
     headers: {
-      Cookie: `refresh_token=${currentRefreshToken}`,
+      Cookie: `refresh_token=${refreshToken}`,
     },
 
     cache: "no-store",
   });
 
   if (!nestResponse.ok) {
+    cookieStore.delete("access_token");
     cookieStore.delete("refresh_token");
 
     return NextResponse.json({ message: "Session expired" }, { status: 401 });
@@ -32,9 +33,15 @@ export async function POST() {
 
   const data = (await nestResponse.json()) as RefreshResponse;
 
+  // NestJS rotated refresh token
   const setCookie = nestResponse.headers.get("set-cookie");
 
-  if (!setCookie) {
+  const match = setCookie?.match(/refresh_token=([^;]+)/);
+
+  const newRefreshToken = match?.[1];
+
+  if (!newRefreshToken) {
+    cookieStore.delete("access_token");
     cookieStore.delete("refresh_token");
 
     return NextResponse.json(
@@ -47,36 +54,25 @@ export async function POST() {
     );
   }
 
-  const match = setCookie.match(/refresh_token=([^;]+)/);
-
-  const newRefreshToken = match?.[1];
-
-  if (!newRefreshToken) {
-    cookieStore.delete("refresh_token");
-
-    return NextResponse.json(
-      {
-        message: "Rotated refresh token was not found",
-      },
-      {
-        status: 500,
-      },
-    );
-  }
-
+  // Replace refresh token
   cookieStore.set("refresh_token", newRefreshToken, {
     httpOnly: true,
-
     secure: process.env.NODE_ENV === "production",
-
     sameSite: "lax",
-
     path: "/",
-
     maxAge: 60 * 60 * 24 * 7,
   });
 
+  // Replace access token
+  cookieStore.set("access_token", data.accessToken, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    maxAge: 60 * 15,
+  });
+
   return NextResponse.json({
-    accessToken: data.accessToken,
+    success: true,
   });
 }
