@@ -1,4 +1,8 @@
-import type { LoginFormValues } from "@/lib/validations/auth";
+import type {
+  LoginFormValues,
+  RegisterFormValues,
+} from "@/lib/validations/auth";
+import { createApiError } from "./api-error";
 
 export interface User {
   id: string;
@@ -23,8 +27,27 @@ export async function login(values: LoginFormValues): Promise<LoginResponse> {
   });
 
   if (!response.ok) {
-    throw new Error("Invalid email or password");
+    throw await createApiError(response);
   }
 
   return response.json() as Promise<LoginResponse>;
+}
+
+export async function registerUser(values: RegisterFormValues): Promise<void> {
+  const response = await fetch("/api/auth/register", {
+    method: "POST",
+
+    headers: {
+      "Content-Type": "application/json",
+    },
+
+    body: JSON.stringify({
+      email: values.email,
+      password: values.password,
+    }),
+  });
+
+  if (!response.ok) {
+    throw await createApiError(response);
+  }
 }

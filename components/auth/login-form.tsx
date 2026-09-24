@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ApiError } from "@/lib/api/api-error";
 import { login } from "@/lib/api/auth";
 import { loginSchema } from "@/lib/validations/auth";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -44,8 +45,13 @@ export function LoginForm() {
 
       router.replace("/dashboard");
       router.refresh();
-    } catch {
-      setServerError("Invalid email or password");
+    } catch (error) {
+      if (error instanceof ApiError) {
+        setServerError(error.message);
+        return;
+      }
+
+      setServerError("Something went wrong. Please try again.");
     }
   }
 
