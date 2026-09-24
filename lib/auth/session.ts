@@ -7,51 +7,28 @@ export interface CurrentUser {
   email: string;
 }
 
-interface RefreshResponse {
-  accessToken: string;
-}
-
 export async function getCurrentUser(): Promise<CurrentUser | null> {
   const cookieStore = await cookies();
 
-  const refreshToken = cookieStore.get("refresh_token")?.value;
+  const accessToken = cookieStore.get("access_token")?.value;
 
-  if (!refreshToken) {
+  if (!accessToken) {
     return null;
   }
 
-  // 1. Exchange refresh token for an access token
-  const refreshResponse = await fetch(
-    `${process.env.NEST_API_URL}/auth/refresh`,
-    {
-      method: "POST",
+  const response = await fetch(`${process.env.NEST_API_URL}/auth/me`, {
+    method: "GET",
 
-      headers: {
-        Cookie: `refresh_token=${refreshToken}`,
-      },
-
-      cache: "no-store",
-    },
-  );
-
-  if (!refreshResponse.ok) {
-    return null;
-  }
-
-  const refreshData = (await refreshResponse.json()) as RefreshResponse;
-
-  // 2. Use access token to ask NestJS who the user is
-  const meResponse = await fetch(`${process.env.NEST_API_URL}/auth/me`, {
     headers: {
-      Authorization: `Bearer ${refreshData.accessToken}`,
+      Authorization: `Bearer ${accessToken}`,
     },
 
     cache: "no-store",
   });
 
-  if (!meResponse.ok) {
+  if (!response.ok) {
     return null;
   }
 
-  return (await meResponse.json()) as CurrentUser;
+  return (await response.json()) as CurrentUser;
 }
