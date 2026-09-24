@@ -1,3 +1,4 @@
+import { isAllowedOrigin } from "@/lib/security/origin";
 import { NextResponse } from "next/server";
 
 interface RegisterRequest {
@@ -6,6 +7,11 @@ interface RegisterRequest {
 }
 
 export async function POST(request: Request) {
+  // CSRF protection
+  if (!isAllowedOrigin(request)) {
+    return NextResponse.json({ message: "Forbidden" }, { status: 403 });
+  }
+
   const body = (await request.json()) as RegisterRequest;
 
   const nestResponse = await fetch(

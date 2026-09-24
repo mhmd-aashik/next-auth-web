@@ -1,11 +1,18 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
+import { isAllowedOrigin } from "@/lib/security/origin";
+
 interface RefreshResponse {
   accessToken: string;
 }
 
-export async function POST() {
+export async function POST(request: Request) {
+  // CSRF protection
+  if (!isAllowedOrigin(request)) {
+    return NextResponse.json({ message: "Forbidden" }, { status: 403 });
+  }
+
   const cookieStore = await cookies();
 
   const refreshToken = cookieStore.get("refresh_token")?.value;
@@ -16,11 +23,9 @@ export async function POST() {
 
   const nestResponse = await fetch(`${process.env.NEST_API_URL}/auth/refresh`, {
     method: "POST",
-
     headers: {
       Cookie: `refresh_token=${refreshToken}`,
     },
-
     cache: "no-store",
   });
 
@@ -33,7 +38,6 @@ export async function POST() {
 
   const data = (await nestResponse.json()) as RefreshResponse;
 
-  // NestJS rotated refresh token
   const setCookie = nestResponse.headers.get("set-cookie");
 
   const match = setCookie?.match(/refresh_token=([^;]+)/);
@@ -54,7 +58,6 @@ export async function POST() {
     );
   }
 
-  // Replace refresh token
   cookieStore.set("refresh_token", newRefreshToken, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
@@ -63,7 +66,6 @@ export async function POST() {
     maxAge: 60 * 60 * 24 * 7,
   });
 
-  // Replace access token
   cookieStore.set("access_token", data.accessToken, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",

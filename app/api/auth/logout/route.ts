@@ -1,7 +1,13 @@
+import { isAllowedOrigin } from "@/lib/security/origin";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
-export async function POST() {
+export async function POST(request: Request) {
+  // CSRF protection
+  if (!isAllowedOrigin(request)) {
+    return NextResponse.json({ message: "Forbidden" }, { status: 403 });
+  }
+
   const cookieStore = await cookies();
 
   const refreshToken = cookieStore.get("refresh_token")?.value;

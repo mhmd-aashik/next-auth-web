@@ -1,3 +1,4 @@
+import { isAllowedOrigin } from "@/lib/security/origin";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
@@ -15,6 +16,11 @@ interface LoginResponse {
 }
 
 export async function POST(request: Request) {
+  // CSRF protection
+  if (!isAllowedOrigin(request)) {
+    return NextResponse.json({ message: "Forbidden" }, { status: 403 });
+  }
+
   const body = (await request.json()) as LoginRequest;
 
   const nestResponse = await fetch(`${process.env.NEST_API_URL}/auth/login`, {
