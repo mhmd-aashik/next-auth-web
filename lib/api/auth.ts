@@ -7,7 +7,6 @@ export interface User {
 
 export interface LoginResponse {
   user: User;
-  accessToken: string;
 }
 
 export async function login(values: LoginFormValues): Promise<LoginResponse> {

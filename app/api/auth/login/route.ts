@@ -77,8 +77,17 @@ export async function POST(request: Request) {
     maxAge: 60 * 60 * 24 * 7,
   });
 
+  cookieStore.set("access_token", data.accessToken, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+
+    // Match this to your NestJS access-token TTL.
+    maxAge: 60 * 15,
+  });
+
   return NextResponse.json({
     user: data.user,
-    accessToken: data.accessToken,
   });
 }
