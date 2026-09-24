@@ -7,28 +7,54 @@ export interface CurrentUser {
   email: string;
 }
 
-export async function getCurrentUser(): Promise<CurrentUser | null> {
+export type AuthResult =
+  | {
+      status: "authenticated";
+      user: CurrentUser;
+    }
+  | {
+      status: "refresh-required";
+    }
+  | {
+      status: "unauthenticated";
+    };
+
+export async function getAuthState(): Promise<AuthResult> {
   const cookieStore = await cookies();
 
   const accessToken = cookieStore.get("access_token")?.value;
 
+  const refreshToken = cookieStore.get("refresh_token")?.value;
+
   if (!accessToken) {
-    return null;
+    return refreshToken
+      ? { status: "refresh-required" }
+      : { status: "unauthenticated" };
   }
 
   const response = await fetch(`${process.env.NEST_API_URL}/auth/me`, {
-    method: "GET",
-
     headers: {
       Authorization: `Bearer ${accessToken}`,
     },
-
     cache: "no-store",
   });
 
-  if (!response.ok) {
-    return null;
+  if (response.ok) {
+    const user = (await response.json()) as CurrentUser;
+
+    return {
+      status: "authenticated",
+      user,
+    };
   }
 
-  return (await response.json()) as CurrentUser;
+  if (response.status === 401 && refreshToken) {
+    return {
+      status: "refresh-required",
+    };
+  }
+
+  return {
+    status: "unauthenticated",
+  };
 }
