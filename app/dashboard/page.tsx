@@ -1,11 +1,11 @@
 import { redirect } from "next/navigation";
 
-import { hasSession } from "@/lib/auth/session";
+import { getCurrentUser } from "@/lib/auth/session";
 
 export default async function DashboardPage() {
-  const authenticated = await hasSession();
+  const user = await getCurrentUser();
 
-  if (!authenticated) {
+  if (!user) {
     redirect("/login");
   }
 
@@ -14,7 +14,7 @@ export default async function DashboardPage() {
       <div className="space-y-2">
         <h1 className="text-3xl font-semibold">Dashboard</h1>
 
-        <p className="text-muted-foreground">You are signed in.</p>
+        <p className="text-muted-foreground">Signed in as {user.email}</p>
       </div>
     </main>
   );
