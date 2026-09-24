@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { login } from "@/lib/api/auth";
 import { loginSchema } from "@/lib/validations/auth";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -17,6 +18,7 @@ interface LoginFormValues {
 
 export function LoginForm() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [serverError, setServerError] = useState<string | null>(null);
 
   const {
@@ -38,9 +40,10 @@ export function LoginForm() {
     try {
       const result = await login(data);
 
-      console.log(result);
+      queryClient.setQueryData(["current-user"], result.user);
 
-      router.push("/dashboard");
+      router.replace("/dashboard");
+      router.refresh();
     } catch {
       setServerError("Invalid email or password");
     }

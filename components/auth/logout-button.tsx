@@ -4,9 +4,11 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
+import { useQueryClient } from "@tanstack/react-query";
 
 export function LogoutButton() {
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   const [isLoading, setIsLoading] = useState(false);
 
@@ -19,12 +21,13 @@ export function LogoutButton() {
       });
 
       if (!response.ok) {
-        const body = await response.text();
-
-        console.error("Logout failed:", response.status, body);
-
-        throw new Error(`Logout failed: ${response.status}`);
+        throw new Error("Logout failed");
       }
+
+      queryClient.removeQueries({
+        queryKey: ["current-user"],
+      });
+
       router.replace("/login");
       router.refresh();
     } finally {
